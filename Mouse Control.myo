@@ -1,0 +1,102 @@
+scriptId = 'com.thalmic.mousecontrol'
+scriptTitle = "Mouse Control"
+scriptDetailsUrl = ""
+
+LOCK_THRESHOLD = 800
+timeSinceLastPose = 0
+
+description = [[
+Mouse Control Script
+
+Control the mouse with your Myo armband! Make sure you put this at the BOTTOM of your Application Manager list, or nothing else will work. Feel free to grab this and customize onForegroundWindowChange so it only works with certain applications.
+
+Questions or problems? Talk to Paul (@PBernhardt)
+]]
+ 
+link = [[ ]]
+ 
+controls = [[
+Controls:
+ - Move arm to control mouse
+ - Fist to left click
+ - Fingers spread to right click
+ - Wave in middle click
+ - Wave out press button 4 (Mac only)
+ - Double tap to enable or disable cursor control
+ ]]
+ 
+knownIssues = [[
+ - button 4 only works on Mac
+ ]]
+
+function notifyUser(edge)
+    if (edge == "down") then
+        myo.notifyUserAction()
+    end
+end
+ 
+function leftClick(edge)
+    notifyUser(edge)
+    myo.mouse("left",edge)
+end
+
+function rightClick(edge)
+    notifyUser(edge)
+    myo.mouse("right",edge)
+end
+
+function middleClick(edge)
+    notifyUser(edge)
+    myo.mouse("center",edge)
+end
+
+function button4Click(edge)
+    notifyUser(edge)
+    myo.mouse("button_4",edge)
+end
+
+function lockMyo(edge)
+    if (myo.getTimeMilliseconds() - timeSinceLastPose > LOCK_THRESHOLD) then
+        myo.controlMouse(false)
+        myo.lock()
+    end
+end
+ 
+ STANDARD_BINDINGS = {
+    fist            = leftClick,
+    fingersSpread   = rightClick,
+    waveOut         = middleClick,
+    wavein          = button4Click,
+    doubleTap       = lockMyo
+}
+--STANDARD_BINDINGS = true
+
+bindings = STANDARD_BINDINGS
+
+function onForegroundWindowChange(app, title)
+    --myo.debug("onForegroundWindowChange: " .. app .. ", " .. title)
+    return true
+end
+
+function activeAppName()
+    return scriptTitle
+end
+
+function onUnlock()
+    myo.unlock("hold")
+    myo.controlMouse(true)
+end
+
+function onPoseEdge(pose, edge)
+    --pose = conditionallySwapWave(pose)
+    --myo.debug("onPoseEdge: " .. pose .. ": " .. edge)
+    fn = bindings[pose]
+    if fn then
+        keyEdge = edge == "off" and "up" or "down"
+        fn(keyEdge)
+    end
+    
+    if (pose ~= "rest" and edge == "off") then
+        timeSinceLastPose = myo.getTimeMilliseconds()
+    end
+end
